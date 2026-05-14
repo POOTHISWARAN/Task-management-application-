@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager</title>
+<style>
+  body {
+    font-family: Arial;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  input, button {
+    padding: 10px;
+    margin: 5px 0;
+    width: 100%;
+  }
+  button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  .task {
+    display: flex;
+    justify-content: space-between;
+    margin: 5px 0;
+    padding: 10px;
+    background: #eee;
+    border-radius: 5px;
+  }
+  .done {
+    text-decoration: line-through;
+    color: gray;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="auth">
+  <h2>Login / Signup</h2>
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<div class="container" id="app" style="display:none;">
+  <h2>Task Manager</h2>
+  <input id="taskInput" placeholder="New Task">
+  <button onclick="addTask()">Add Task</button>
+  <div id="tasks"></div>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+let currentUser = null;
+
+// AUTH
+function signup() {
+  let user = username.value;
+  let pass = password.value;
+
+  if (!user || !pass) return alert("Enter details");
+
+  let users = JSON.parse(localStorage.getItem("users")) || {};
+  if (users[user]) return alert("User exists");
+
+  users[user] = pass;
+  localStorage.setItem("users", JSON.stringify(users));
+  alert("Signup successful!");
+}
+
+function login() {
+  let user = username.value;
+  let pass = password.value;
+
+  let users = JSON.parse(localStorage.getItem("users")) || {};
+
+  if (users[user] === pass) {
+    currentUser = user;
+    localStorage.setItem("currentUser", user);
+    showApp();
+  } else {
+    alert("Invalid credentials");
+  }
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  location.reload();
+}
+
+// TASKS
+function getTasks() {
+  return JSON.parse(localStorage.getItem(currentUser + "_tasks")) || [];
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem(currentUser + "_tasks", JSON.stringify(tasks));
+}
+
+function addTask() {
+  let text = taskInput.value;
+  if (!text) return;
+
+  let tasks = getTasks();
+  tasks.push({ text, done: false });
+  saveTasks(tasks);
+  taskInput.value = "";
+  renderTasks();
+}
+
+function toggleTask(index) {
+  let tasks = getTasks();
+  tasks[index].done = !tasks[index].done;
+  saveTasks(tasks);
+  renderTasks();
+}
+
+function deleteTask(index) {
+  let tasks = getTasks();
+  tasks.splice(index, 1);
+  saveTasks(tasks);
+  renderTasks();
+}
+
+function renderTasks() {
+  let tasks = getTasks();
+  tasksDiv = document.getElementById("tasks");
+  tasksDiv.innerHTML = "";
+
+  tasks.forEach((t, i) => {
+    let div = document.createElement("div");
+    div.className = "task";
+
+    div.innerHTML = `
+      <span onclick="toggleTask(${i})" class="${t.done ? 'done' : ''}">
+        ${t.text}
+      </span>
+      <button onclick="deleteTask(${i})">❌</button>
+    `;
+
+    tasksDiv.appendChild(div);
+  });
+}
+
+// UI SWITCH
+function showApp() {
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  renderTasks();
+}
+
+// AUTO LOGIN
+window.onload = () => {
+  let user = localStorage.getItem("currentUser");
+  if (user) {
+    currentUser = user;
+    showApp();
+  }
+};
+</script>
+
+</body>
+</html>
